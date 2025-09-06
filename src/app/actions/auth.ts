@@ -16,7 +16,7 @@ export async function createUserProfile(userId: string, email: string, businessN
     }
   );
 
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await (supabaseAdmin as any)
     .from('users')
     .insert([{
       id: userId,
