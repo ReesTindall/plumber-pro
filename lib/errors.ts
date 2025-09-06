@@ -3,7 +3,7 @@ export class AppError extends Error {
     public code: string,
     public message: string,
     public statusCode: number = 400,
-    public details?: any
+    public details?: unknown
   ) {
     super(message);
   }
@@ -26,18 +26,19 @@ export const ErrorCodes = {
   INT_SQUARE_ERROR: 'INT_SQUARE_ERROR'
 } as const;
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: {
     code: string;
     message: string;
-    details?: any;
+    details?: unknown;
   };
 }
 
-export function handleSupabaseError(error: any): AppError {
-  if (error?.code === '23505') {
+export function handleSupabaseError(error: unknown): AppError {
+  const supabaseError = error as { code?: string; message?: string };
+  if (supabaseError?.code === '23505') {
     return new AppError(
       ErrorCodes.DB_UNIQUE_VIOLATION,
       'This record already exists',
@@ -46,7 +47,7 @@ export function handleSupabaseError(error: any): AppError {
     );
   }
   
-  if (error?.code === 'PGRST116') {
+  if (supabaseError?.code === 'PGRST116') {
     return new AppError(
       ErrorCodes.DB_NOT_FOUND,
       'Record not found',
@@ -57,7 +58,7 @@ export function handleSupabaseError(error: any): AppError {
   
   return new AppError(
     'UNKNOWN_ERROR',
-    error?.message || 'An unexpected error occurred',
+    supabaseError?.message || 'An unexpected error occurred',
     500,
     error
   );

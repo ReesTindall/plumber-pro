@@ -43,7 +43,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     loadDashboardData();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadDashboardData = async () => {
     try {
@@ -86,13 +86,16 @@ export default function DashboardPage() {
           .order('time_window')
           .limit(5);
 
-        const formattedJobs = todaysJobsData?.map(job => ({
-          id: job.id,
-          customer_name: job.customers?.name || (job.quick_customer as any)?.name || 'Unknown Customer',
-          time_window: job.time_window,
-          type: job.type,
-          address: job.customers?.address || (job.quick_customer as any)?.address || 'No address',
-        })) || [];
+        const formattedJobs = todaysJobsData?.map(job => {
+          const quickCustomer = job.quick_customer as { name?: string; address?: string } | null;
+          return {
+            id: job.id,
+            customer_name: job.customers?.name || quickCustomer?.name || 'Unknown Customer',
+            time_window: job.time_window,
+            type: job.type,
+            address: job.customers?.address || quickCustomer?.address || 'No address',
+          };
+        }) || [];
 
         setUpcomingJobs(formattedJobs);
 
@@ -172,7 +175,7 @@ export default function DashboardPage() {
             Welcome back, {userName || 'there'}!
           </h1>
           <p className="mt-1 text-sm text-gray-600">
-            Here's what's happening with your business today.
+            Here&apos;s what&apos;s happening with your business today.
           </p>
         </div>
 
@@ -263,7 +266,7 @@ export default function DashboardPage() {
           <div className="px-4 py-5 sm:p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg leading-6 font-medium text-gray-900">
-                Today's Jobs
+                Today&apos;s Jobs
               </h3>
               <Link
                 href="/dashboard/jobs"
