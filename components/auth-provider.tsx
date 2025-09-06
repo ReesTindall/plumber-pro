@@ -68,7 +68,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           business_name: businessName,
           invoice_template: 'classic',
           default_tax_rate: 0,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         }] as any);
 
       if (profileError) throw profileError;

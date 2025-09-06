@@ -62,7 +62,6 @@ export default function RegisterPage() {
             phone: formData.phone || null,
             invoice_template: 'classic',
             default_tax_rate: 0,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           }] as any);
 
         if (profileError) {
