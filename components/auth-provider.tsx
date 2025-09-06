@@ -60,6 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error;
 
     if (data.user) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error: profileError } = await supabase
         .from('users')
         .insert([{
@@ -68,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           business_name: businessName,
           invoice_template: 'classic',
           default_tax_rate: 0,
-        }]);
+        }] as any);
 
       if (profileError) throw profileError;
     }

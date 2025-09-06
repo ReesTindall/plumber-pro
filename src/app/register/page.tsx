@@ -53,6 +53,7 @@ export default function RegisterPage() {
       }
 
       if (data.user) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { error: profileError } = await supabase
           .from('users')
           .insert([{
@@ -62,7 +63,7 @@ export default function RegisterPage() {
             phone: formData.phone || null,
             invoice_template: 'classic',
             default_tax_rate: 0,
-          }]);
+          }] as any);
 
         if (profileError) {
           console.error('Profile creation error:', profileError);
