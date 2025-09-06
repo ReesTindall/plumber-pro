@@ -62,13 +62,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (data.user) {
       const { error: profileError } = await supabase
         .from('users')
-        .insert({
+        .insert([{
           id: data.user.id,
           email,
           business_name: businessName,
           invoice_template: 'classic',
           default_tax_rate: 0,
-        });
+        }]);
 
       if (profileError) throw profileError;
     }

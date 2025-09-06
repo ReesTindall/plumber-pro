@@ -55,14 +55,14 @@ export default function RegisterPage() {
       if (data.user) {
         const { error: profileError } = await supabase
           .from('users')
-          .insert({
+          .insert([{
             id: data.user.id,
             email: formData.email,
             business_name: formData.businessName,
             phone: formData.phone || null,
             invoice_template: 'classic',
             default_tax_rate: 0,
-          });
+          }]);
 
         if (profileError) {
           console.error('Profile creation error:', profileError);
