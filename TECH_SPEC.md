@@ -1,17 +1,27 @@
-PlumberPro MVP Technical Specification
-Claude Code Optimized - Version 2.0
-Executive Summary
+# PlumberPro MVP Technical Specification
+
+**Claude Code Optimized - Version 2.1**  
+**Last Updated: September 5, 2025**
+
+## Executive Summary
+
 Building a streamlined CRM for 1-3 person plumbing companies fresh out of trade school. Focus on saving time through route optimization, professional estimates/invoicing, and automated customer communication while maintaining user control and professional appearance.
-Target Launch: 6 weeksTarget Users: Small plumbing startups (1-3 people)Core Value Prop: Save $1,500+/month in operational inefficiencyDevelopment Method: Claude Code with continuous context updates
 
-Project Structure
+- **Target Launch**: 6 weeks from start (October 2025)
+- **Target Users**: Small plumbing startups (1-3 people)
+- **Core Value Prop**: Save $1,500+/month in operational inefficiency
+- **Development Method**: Claude Code with continuous context updates
+- **Current Status**: MVP in development, authentication complete, Vercel preview active
 
+## Project Structure
 
+```
 plumber-pro/
-├── .claude-context           # Core context for Claude
-├── TECH-SPEC.md             # This file - source of truth
-├── claude-examples.md       # Code patterns to follow
-├── current-api-routes.md    # List of all API endpoints
+├── CLAUDE.md                # Core context for Claude AI
+├── TECH_SPEC.md            # This file - source of truth
+├── progress.md              # Development progress tracking
+├── current-api-routes.ts    # List of all API endpoints
+├── SPRINT-CURRENT.md        # Current sprint tasks
 ├── deploy.sh                # Deployment script
 ├── .env.local               # Local environment variables
 ├── .env.example             # Environment template
@@ -22,36 +32,42 @@ plumber-pro/
 │   │   └── 00003_add_estimates.sql
 │   ├── seed.sql            # Development test data
 │   └── config.toml         # Supabase configuration
-├── app/                     # Next.js 14 app directory
+├── src/
+│   ├── app/                 # Next.js 15 app directory
+│   │   ├── api/            # API routes
+│   │   ├── dashboard/      # Dashboard pages
+│   │   ├── login/          # Auth pages
+│   │   └── register/
+│   └── components/         # Page-specific components
+├── components/              # Shared components
 ├── lib/                     # Shared utilities
-├── components/              # React components
 ├── public/                  # Static assets
 └── tests/                   # Test specifications
     ├── unit/
     ├── integration/
     └── e2e/
 
-Deployment Architecture (Simplified)
-Environment Strategy
+## Deployment Architecture (Current Implementation)
 
+### Environment Strategy
 
-Local Development:
-- URL: localhost:3000
+**Local Development:**
+- URL: localhost:3000 (or 3001 if port conflict)
 - Database: Local Supabase (supabase start)
-- Payments: Test mode keys
-- Purpose: Active development and testing
+- Auth: Local Supabase Auth with Inbucket
+- Status: ✅ Working
 
-Preview (Any branch):
-- URL: plumberpro-git-{branch}.vercel.app
-- Database: Production Supabase (read/write safe test data)
-- Payments: Test mode keys
-- Purpose: Testing features before merge
+**Preview (development branch):**
+- URL: https://plumber-c0vavbnwz-rees-projects-a5599142.vercel.app
+- Database: Production Supabase (safe test data)
+- Auth: Production Supabase with email verification
+- Status: ✅ Active and working
 
-Production (main branch):
-- URL: app.plumberpro.com
+**Production (main branch):**
+- URL: app.plumberpro.com (pending)
 - Database: Production Supabase
-- Payments: Live mode keys
-- Purpose: Real users
+- Auth: Production with full email service
+- Status: 🚧 Not deployed yet
 Database Migration Strategy
 Single Source of Truth: All schema changes MUST go through migration files. Never modify schema through Supabase dashboard.
 
@@ -85,16 +101,20 @@ STRIPE_SECRET_KEY=sk_test_xxx|sk_live_xxx
 SQUARE_ACCESS_TOKEN=sandbox_xxx|prod_xxx
 STRIPE_WEBHOOK_SECRET=whsec_test_xxx|whsec_live_xxx
 
-Technical Architecture
-Core Stack
-* Framework: Next.js 14 (App Router) + TypeScript
-* Styling: Tailwind CSS + shadcn/ui components
-* Database: Single Supabase project (PostgreSQL + Auth + Storage)
-* Hosting: Vercel (automatic preview + production)
-* Payments: Stripe Connect AND Square (user choice)
-* SMS: Twilio
-* Maps: Google Maps API
-* Testing: Jest + React Testing Library + Playwright
+## Technical Architecture
+
+### Core Stack (Implemented)
+* **Framework**: Next.js 15.5.2 (App Router) + TypeScript ✅
+* **Styling**: Tailwind CSS ✅
+* **Database**: Supabase (PostgreSQL + Auth + Storage) ✅
+* **Hosting**: Vercel (automatic preview + production) ✅
+* **Authentication**: Supabase Auth with email verification ✅
+
+### Integrations (Planned)
+* **Payments**: Stripe Connect AND Square (user choice) 📋
+* **SMS**: Twilio 📋
+* **Maps**: Google Maps API 📋
+* **Testing**: Jest + React Testing Library + Playwright 📋
 Monorepo Benefits
 Single repository containing everything. This simplifies:
 * Claude Code context management
