@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { AppError, ErrorCodes } from '@/lib/errors';
+import { createUserProfile } from '@/app/actions/auth';
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -53,29 +54,19 @@ export default function RegisterPage() {
       }
 
       if (data.user) {
-        // Wait a moment for the auth session to be established
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const { error: profileError } = await (supabase as any)
-          .from('users')
-          .insert([{
-            id: data.user.id,
-            email: formData.email,
-            business_name: formData.businessName,
-            phone: formData.phone || null,
-            invoice_template: 'classic',
-            default_tax_rate: 0,
-          }])
-          .select()
-          .single();
+        // Use server action with service role to create profile
+        const profileResult = await createUserProfile(
+          data.user.id,
+          formData.email,
+          formData.businessName,
+          formData.phone || null
+        );
 
-        if (profileError) {
-          console.error('Profile creation error:', profileError);
-          // If profile creation fails, try to delete the auth user
-          await supabase.auth.admin?.deleteUser?.(data.user.id).catch(() => {});
+        if (profileResult.error) {
+          console.error('Profile creation error:', profileResult.error);
           throw new AppError(
             'PROFILE_CREATE_ERROR',
-            `Failed to create user profile: ${profileError.message || 'Unknown error'}`
+            `Failed to create user profile: ${profileResult.error}`
           );
         }
 

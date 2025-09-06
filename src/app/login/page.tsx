@@ -36,6 +36,7 @@ export default function LoginPage() {
       }
 
       router.push('/dashboard');
+      router.refresh();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred during login';
       setError(errorMessage);
