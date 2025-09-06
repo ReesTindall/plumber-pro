@@ -53,6 +53,9 @@ export default function RegisterPage() {
       }
 
       if (data.user) {
+        // Wait a moment for the auth session to be established
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         const { error: profileError } = await (supabase as any)
           .from('users')
           .insert([{
@@ -62,13 +65,17 @@ export default function RegisterPage() {
             phone: formData.phone || null,
             invoice_template: 'classic',
             default_tax_rate: 0,
-          }]);
+          }])
+          .select()
+          .single();
 
         if (profileError) {
           console.error('Profile creation error:', profileError);
+          // If profile creation fails, try to delete the auth user
+          await supabase.auth.admin?.deleteUser?.(data.user.id).catch(() => {});
           throw new AppError(
             'PROFILE_CREATE_ERROR',
-            'Failed to create user profile. Please try again.'
+            `Failed to create user profile: ${profileError.message || 'Unknown error'}`
           );
         }
 

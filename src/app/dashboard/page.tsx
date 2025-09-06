@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { 
@@ -39,6 +40,7 @@ export default function DashboardPage() {
   const [upcomingJobs, setUpcomingJobs] = useState<UpcomingJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState('');
+  const router = useRouter();
   const supabase = createClient();
 
   useEffect(() => {
@@ -47,7 +49,13 @@ export default function DashboardPage() {
 
   const loadDashboardData = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) {
+        console.error('Auth error:', authError);
+        setLoading(false);
+        return;
+      }
       
       if (user) {
         const { data: profile } = await (supabase as any)
@@ -120,6 +128,9 @@ export default function DashboardPage() {
           activeCustomers: customersCount || 0,
           pendingEstimates: pendingEstimatesCount || 0,
         });
+      } else {
+        console.log('No user found, redirecting to login');
+        router.push('/login');
       }
     } catch (error) {
       console.error('Error loading dashboard data:', error);
