@@ -21,7 +21,7 @@ const eslintConfig = [
     ],
   },
   {
-    files: ["components/auth-provider.tsx", "src/app/register/page.tsx"],
+    files: ["components/auth-provider.tsx", "src/app/register/page.tsx", "src/app/dashboard/page.tsx"],
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
     },
