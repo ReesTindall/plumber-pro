@@ -86,7 +86,7 @@ export default function DashboardPage() {
           .order('time_window')
           .limit(5);
 
-        const formattedJobs = todaysJobsData?.map(job => {
+        const formattedJobs = todaysJobsData?.map((job: any) => {
           const quickCustomer = job.quick_customer as { name?: string; address?: string } | null;
           return {
             id: job.id,
