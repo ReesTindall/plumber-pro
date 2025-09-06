@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { AppError, ErrorCodes } from '@/lib/errors';
-import { createUserProfile } from '@/app/actions/auth';
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -54,23 +53,32 @@ export default function RegisterPage() {
       }
 
       if (data.user) {
-        // Use server action with service role to create profile
-        const profileResult = await createUserProfile(
-          data.user.id,
-          formData.email,
-          formData.businessName,
-          formData.phone || null
-        );
+        // Call API route to create profile with service role
+        const profileResponse = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: data.user.id,
+            email: formData.email,
+            businessName: formData.businessName,
+            phone: formData.phone || null,
+          }),
+        });
 
-        if (profileResult.error) {
+        const profileResult = await profileResponse.json();
+
+        if (!profileResponse.ok || profileResult.error) {
           console.error('Profile creation error:', profileResult.error);
           throw new AppError(
             'PROFILE_CREATE_ERROR',
-            `Failed to create user profile: ${profileResult.error}`
+            `Failed to create user profile: ${profileResult.error || 'Unknown error'}`
           );
         }
 
         router.push('/dashboard');
+        router.refresh();
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred during registration';
