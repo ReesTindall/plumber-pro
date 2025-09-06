@@ -50,7 +50,7 @@ export default function DashboardPage() {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
-        const { data: profile } = await supabase
+        const { data: profile } = await (supabase as any)
           .from('users')
           .select('business_name')
           .eq('id', user.id)
@@ -62,13 +62,13 @@ export default function DashboardPage() {
 
         const today = new Date().toISOString().split('T')[0];
         
-        const { count: todaysJobsCount } = await supabase
+        const { count: todaysJobsCount } = await (supabase as any)
           .from('jobs')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id)
           .eq('scheduled_date', today);
 
-        const { data: todaysJobsData } = await supabase
+        const { data: todaysJobsData } = await (supabase as any)
           .from('jobs')
           .select(`
             id,
@@ -99,13 +99,13 @@ export default function DashboardPage() {
 
         setUpcomingJobs(formattedJobs);
 
-        const { count: customersCount } = await supabase
+        const { count: customersCount } = await (supabase as any)
           .from('customers')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id)
           .eq('archived', false);
 
-        const { count: pendingEstimatesCount } = await supabase
+        const { count: pendingEstimatesCount } = await (supabase as any)
           .from('estimates')
           .select(`
             id,

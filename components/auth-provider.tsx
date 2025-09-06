@@ -31,7 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          const { data: profileData } = await supabase
+          const { data: profileData } = await (supabase as any)
             .from('users')
             .select('*')
             .eq('id', session.user.id)
@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error;
 
     if (data.user) {
-      const { error: profileError } = await supabase
+      const { error: profileError } = await (supabase as any)
         .from('users')
         .insert([{
           id: data.user.id,
@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           business_name: businessName,
           invoice_template: 'classic',
           default_tax_rate: 0,
-        }] as any);
+        }]);
 
       if (profileError) throw profileError;
     }
@@ -91,9 +91,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updateProfile = async (updates: Partial<UserProfile>) => {
     if (!user) throw new Error('No user logged in');
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('users')
-      .update(updates as any)
+      .update(updates)
       .eq('id', user.id)
       .select()
       .single();

@@ -53,7 +53,7 @@ export default function RegisterPage() {
       }
 
       if (data.user) {
-        const { error: profileError } = await supabase
+        const { error: profileError } = await (supabase as any)
           .from('users')
           .insert([{
             id: data.user.id,
@@ -62,7 +62,7 @@ export default function RegisterPage() {
             phone: formData.phone || null,
             invoice_template: 'classic',
             default_tax_rate: 0,
-          }] as any);
+          }]);
 
         if (profileError) {
           console.error('Profile creation error:', profileError);
