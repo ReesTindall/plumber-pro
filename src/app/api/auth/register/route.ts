@@ -18,6 +18,7 @@ export async function POST(request: Request) {
     );
 
     // Create user profile with service role to bypass RLS
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabaseAdmin as any)
       .from('users')
       .insert([{
