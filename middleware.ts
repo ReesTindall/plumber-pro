@@ -3,7 +3,11 @@ import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
 export async function middleware(request: NextRequest) {
-  const response = NextResponse.next();
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
   
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,9 +18,6 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => 
-            request.cookies.set(name, value)
-          );
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options)
           );
@@ -25,7 +26,12 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
+  // Refresh session if it exists
+  const { data: { user }, error } = await supabase.auth.getUser();
+  
+  if (error) {
+    console.log('Middleware auth error:', error.message);
+  }
 
   const isAuthPage = request.nextUrl.pathname === '/login' || 
                      request.nextUrl.pathname === '/register';
@@ -47,5 +53,6 @@ export const config = {
     '/dashboard/:path*',
     '/login',
     '/register',
+    '/auth/callback',
   ],
 };

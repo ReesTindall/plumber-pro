@@ -20,7 +20,7 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -32,15 +32,29 @@ export default function LoginPage() {
             'Invalid email or password'
           );
         }
+        if (error.message.includes('Email not confirmed')) {
+          throw new AppError(
+            'EMAIL_NOT_CONFIRMED',
+            'Please confirm your email address before signing in'
+          );
+        }
         throw error;
       }
 
-      router.push('/dashboard');
-      router.refresh();
+      if (data.session) {
+        // Wait a moment for session to be established
+        await new Promise(resolve => setTimeout(resolve, 500));
+        router.push('/dashboard');
+        router.refresh();
+      } else {
+        throw new AppError(
+          'NO_SESSION',
+          'Unable to establish session. Please try again.'
+        );
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred during login';
       setError(errorMessage);
-    } finally {
       setLoading(false);
     }
   };

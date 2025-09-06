@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/components/auth-provider";
+import SessionProvider from "@/components/session-provider";
 import { EnvironmentBanner } from "@/components/environment-banner";
 import "./globals.css";
 
@@ -31,7 +32,9 @@ export default function RootLayout({
       >
         <EnvironmentBanner />
         <AuthProvider>
-          {children}
+          <SessionProvider>
+            {children}
+          </SessionProvider>
         </AuthProvider>
       </body>
     </html>

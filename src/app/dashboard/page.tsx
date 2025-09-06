@@ -49,10 +49,23 @@ export default function DashboardPage() {
 
   const loadDashboardData = async () => {
     try {
+      // First try to get the session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        console.error('Session error:', sessionError?.message || 'No session');
+        router.push('/login');
+        return;
+      }
+      
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       
       if (authError) {
         console.error('Auth error:', authError);
+        // If we get an auth session missing error, redirect to login
+        if (authError.message.includes('Auth session missing')) {
+          router.push('/login');
+        }
         setLoading(false);
         return;
       }

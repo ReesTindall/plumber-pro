@@ -40,19 +40,30 @@ export default function RegisterPage() {
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        }
       });
 
       if (signUpError) {
         if (signUpError.message.includes('already registered')) {
           throw new AppError(
             ErrorCodes.DB_UNIQUE_VIOLATION,
-            'This email is already registered'
+            'This email is already registered. Please sign in instead.'
           );
         }
         throw signUpError;
       }
 
-      if (data.user) {
+      // Check if email confirmation is required
+      if (data.user && !data.session) {
+        // User needs to confirm email
+        setError('Please check your email to confirm your account before signing in.');
+        setLoading(false);
+        return;
+      }
+
+      if (data.user && data.session) {
         // Call API route to create profile with service role
         const profileResponse = await fetch('/api/auth/register', {
           method: 'POST',
@@ -77,8 +88,12 @@ export default function RegisterPage() {
           );
         }
 
+        // Sign in automatically if session exists
         router.push('/dashboard');
         router.refresh();
+      } else if (data.user) {
+        // No session means email confirmation is required
+        setError('Registration successful! Please check your email to confirm your account.');
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred during registration';
