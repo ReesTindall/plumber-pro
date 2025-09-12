@@ -21,11 +21,15 @@ export default function SessionProvider({ children }: { children: React.ReactNod
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
     // Get initial session
     const getInitialSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-      setLoading(false);
+      if (mounted) {
+        setUser(session?.user ?? null);
+        setLoading(false);
+      }
     };
 
     getInitialSession();
@@ -33,19 +37,41 @@ export default function SessionProvider({ children }: { children: React.ReactNod
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        setUser(session?.user ?? null);
-        setLoading(false);
-        
-        if (event === 'SIGNED_OUT') {
-          // Only redirect if we're on a protected page
-          if (window.location.pathname.startsWith('/dashboard')) {
-            router.push('/login');
+        if (mounted) {
+          setUser(session?.user ?? null);
+          setLoading(false);
+          
+          if (event === 'SIGNED_OUT') {
+            // Only redirect if we're on a protected page
+            if (window.location.pathname.startsWith('/dashboard')) {
+              router.push('/login');
+            }
           }
         }
       }
     );
 
-    return () => subscription.unsubscribe();
+    // Handle browser navigation events (back/forward)
+    const handlePopState = () => {
+      if (mounted) {
+        // Reset loading state when navigating back
+        setLoading(true);
+        // Re-check session after navigation
+        setTimeout(() => {
+          if (mounted) {
+            getInitialSession();
+          }
+        }, 50);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      mounted = false;
+      window.removeEventListener('popstate', handlePopState);
+      subscription.unsubscribe();
+    };
   }, [router, supabase]);
 
   return (
