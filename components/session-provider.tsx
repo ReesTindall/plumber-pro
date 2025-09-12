@@ -14,70 +14,50 @@ const SessionContext = createContext<SessionContextType>({ user: null, loading: 
 
 export const useSession = () => useContext(SessionContext);
 
+// Global session state to prevent re-initialization
+let globalUser: User | null = null;
+let globalLoading = true;
+let globalInitialized = false;
+
 export default function SessionProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const supabase = createClient();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(globalUser);
+  const [loading, setLoading] = useState<boolean>(globalLoading);
 
   useEffect(() => {
     let mounted = true;
 
-    // Get initial session
+    // If already initialized, use global state
+    if (globalInitialized) {
+      setUser(globalUser);
+      setLoading(false);
+      return;
+    }
+
+    // Initial session check
     const getSession = async () => {
       try {
-        // Add a small delay to prevent race conditions during navigation
-        await new Promise(resolve => setTimeout(resolve, 50));
-        
-        if (!mounted) return;
-        
-        const { data: { user }, error } = await supabase.auth.getUser();
+        const { data: { user } } = await supabase.auth.getUser();
         
         if (mounted) {
+          globalUser = user;
+          globalLoading = false;
+          globalInitialized = true;
           setUser(user);
           setLoading(false);
         }
       } catch (error) {
         console.error('Error getting session:', error);
         if (mounted) {
+          globalUser = null;
+          globalLoading = false;
+          globalInitialized = true;
           setUser(null);
           setLoading(false);
         }
       }
     };
-
-    // Add timeout to prevent infinite loading
-    const timeoutId = setTimeout(() => {
-      if (mounted && loading) {
-        console.log('Session check timeout, assuming no user');
-        setUser(null);
-        setLoading(false);
-      }
-    }, 5000); // 5 second timeout
-
-    // Handle page visibility changes
-    const handleVisibilityChange = () => {
-      if (!document.hidden && mounted && loading) {
-        // Only re-check session if we're still loading and page becomes visible
-        getSession();
-      }
-    };
-
-    // Handle browser back/forward navigation
-    const handlePopState = () => {
-      if (mounted && loading) {
-        // Re-check session on navigation
-        getSession();
-      }
-    };
-
-    if (typeof document !== 'undefined') {
-      document.addEventListener('visibilitychange', handleVisibilityChange);
-    }
-    
-    if (typeof window !== 'undefined') {
-      window.addEventListener('popstate', handlePopState);
-    }
 
     getSession();
 
@@ -88,6 +68,7 @@ export default function SessionProvider({ children }: { children: React.ReactNod
       console.log('Auth state change:', event);
       
       if (event === 'SIGNED_OUT') {
+        globalUser = null;
         setUser(null);
         setLoading(false);
         // Only redirect if we're on a protected page
@@ -95,10 +76,12 @@ export default function SessionProvider({ children }: { children: React.ReactNod
           router.push('/login');
         }
       } else if (event === 'SIGNED_IN' && session) {
+        globalUser = session.user;
         setUser(session.user);
         setLoading(false);
         console.log('User signed in successfully');
       } else if (event === 'TOKEN_REFRESHED' && session) {
+        globalUser = session.user;
         setUser(session.user);
         console.log('Token refreshed successfully');
       }
@@ -106,14 +89,7 @@ export default function SessionProvider({ children }: { children: React.ReactNod
 
     return () => {
       mounted = false;
-      clearTimeout(timeoutId);
       subscription.unsubscribe();
-      if (typeof document !== 'undefined') {
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
-      }
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('popstate', handlePopState);
-      }
     };
   }, [router, supabase]);
 
