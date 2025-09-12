@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { AppError, ErrorCodes, createApiResponse } from '@/lib/errors';
 import { Search, Plus, X, MapPin, Calendar, Clock } from 'lucide-react';
+import AddressAutocomplete from '@/components/ui/address-autocomplete';
+import { type PlaceDetails } from '@/lib/google-maps';
 
 interface Customer {
   id: string;
@@ -35,6 +37,9 @@ interface JobFormData {
   timeWindow: string;
   type: string;
   notes: string;
+  
+  // Address details from Google Places
+  placeDetails?: PlaceDetails;
 }
 
 const JOB_TYPES = [
@@ -362,14 +367,24 @@ export default function NewJobPage() {
                 <label htmlFor="customerAddress" className="block text-sm font-medium text-gray-700">
                   Address *
                 </label>
-                <input
-                  type="text"
-                  id="customerAddress"
-                  required
+                <AddressAutocomplete
                   value={formData.customerAddress}
-                  onChange={(e) => setFormData({ ...formData, customerAddress: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  onChange={(address, placeDetails) => {
+                    setFormData({ 
+                      ...formData, 
+                      customerAddress: address,
+                      placeDetails
+                    });
+                  }}
+                  placeholder="Start typing an address..."
+                  required
+                  className="mt-1"
                 />
+                {formData.placeDetails && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    📍 Verified address with GPS coordinates
+                  </p>
+                )}
               </div>
 
               <div>

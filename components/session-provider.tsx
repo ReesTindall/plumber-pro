@@ -19,64 +19,33 @@ export default function SessionProvider({ children }: { children: React.ReactNod
   const supabase = createClient();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   useEffect(() => {
     let mounted = true;
+    let isTabVisible = true;
 
-    // Get initial session and validate it
+    // Track tab visibility to avoid unnecessary auth checks
+    const handleVisibilityChange = () => {
+      isTabVisible = !document.hidden;
+    };
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+    }
+
+    // Get initial session
     const getSession = async () => {
       try {
         const { data: { user }, error } = await supabase.auth.getUser();
         
-        if (error) {
-          console.log('Session error:', error.message);
-          // Clear invalid session
-          await supabase.auth.signOut();
-          if (mounted) {
-            setUser(null);
-            setLoading(false);
-          }
-          return;
-        }
-
-        if (user) {
-          // Validate the session by making a simple API call
-          try {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const { error: profileError } = await (supabase as any)
-              .from('users')
-              .select('id')
-              .eq('id', user.id)
-              .limit(1);
-            
-            if (profileError && profileError.message.includes('JWT')) {
-              console.log('Session validation failed, clearing session');
-              await supabase.auth.signOut();
-              if (mounted) {
-                setUser(null);
-                setLoading(false);
-              }
-              return;
-            }
-          } catch (validationError) {
-            console.log('Session validation error:', validationError);
-            await supabase.auth.signOut();
-            if (mounted) {
-              setUser(null);
-              setLoading(false);
-            }
-            return;
-          }
-        }
-
         if (mounted) {
           setUser(user);
           setLoading(false);
+          setInitialLoadComplete(true);
         }
       } catch (error) {
         console.error('Error getting session:', error);
-        // Clear potentially corrupt session
-        await supabase.auth.signOut();
         if (mounted) {
           setUser(null);
           setLoading(false);
@@ -94,12 +63,14 @@ export default function SessionProvider({ children }: { children: React.ReactNod
       
       if (event === 'SIGNED_OUT') {
         setUser(null);
+        setLoading(false);
         // Only redirect if we're on a protected page
         if (window.location.pathname.startsWith('/dashboard')) {
           router.push('/login');
         }
       } else if (event === 'SIGNED_IN' && session) {
         setUser(session.user);
+        setLoading(false);
         console.log('User signed in successfully');
       } else if (event === 'TOKEN_REFRESHED' && session) {
         setUser(session.user);
@@ -110,6 +81,9 @@ export default function SessionProvider({ children }: { children: React.ReactNod
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      }
     };
   }, [router, supabase]);
 
