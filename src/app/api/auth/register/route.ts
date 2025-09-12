@@ -11,7 +11,7 @@ export async function POST(request: Request) {
       const error = new AppError(
         ErrorCodes.BIZ_INVALID_JOB_STATUS,
         'Missing required fields: userId, email, and businessName are required',
-        400
+        400 
       );
       const response = createApiResponse(null, error);
       return NextResponse.json(response, { status: error.statusCode });
