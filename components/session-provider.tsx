@@ -9,32 +9,29 @@ export default function SessionProvider({ children }: { children: React.ReactNod
   const supabase = createClient();
 
   useEffect(() => {
+    let mounted = true;
+
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
+      
+      console.log('Auth state change:', event);
+      
       if (event === 'SIGNED_OUT') {
-        router.push('/login');
+        // Only redirect if we're on a protected page
+        if (window.location.pathname.startsWith('/dashboard')) {
+          router.push('/login');
+        }
       } else if (event === 'SIGNED_IN' && session) {
-        router.refresh();
+        // Don't use router.refresh() as it can cause issues
+        console.log('User signed in successfully');
       } else if (event === 'TOKEN_REFRESHED') {
         console.log('Token refreshed successfully');
-        router.refresh();
-      } else if (event === 'USER_UPDATED') {
-        router.refresh();
       }
     });
 
-    // Check session on mount
-    const checkSession = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (!session && window.location.pathname.startsWith('/dashboard')) {
-        console.log('No session found, redirecting to login');
-        router.push('/login');
-      }
-    };
-
-    checkSession();
-
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, [router, supabase]);

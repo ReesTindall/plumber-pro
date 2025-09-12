@@ -42,10 +42,8 @@ export default function LoginPage() {
       }
 
       if (data.session) {
-        // Wait a moment for session to be established
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Session established successfully, redirect to dashboard
         router.push('/dashboard');
-        router.refresh();
       } else {
         throw new AppError(
           'NO_SESSION',

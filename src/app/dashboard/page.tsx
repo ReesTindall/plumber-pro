@@ -40,93 +40,113 @@ export default function DashboardPage() {
   const [upcomingJobs, setUpcomingJobs] = useState<UpcomingJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
   useEffect(() => {
-    loadDashboardData();
+    let mounted = true;
+    
+    const loadData = async () => {
+      if (!mounted) return;
+      
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (!mounted) return;
+        
+        if (authError || !user) {
+          console.error('Auth error:', authError?.message || 'No user');
+          router.push('/login');
+          return;
+        }
+
+        await loadDashboardData(user);
+      } catch (error) {
+        if (!mounted) return;
+        console.error('Error loading dashboard:', error);
+        setError('Failed to load dashboard data');
+        setLoading(false);
+      }
+    };
+    
+    loadData();
+    
+    return () => {
+      mounted = false;
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = async (user: any) => {
     try {
-      // First try to get the session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      // Load user profile
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: profile } = await (supabase as any)
+        .from('users')
+        .select('business_name')
+        .eq('id', user.id)
+        .single();
       
-      if (sessionError || !session) {
-        console.error('Session error:', sessionError?.message || 'No session');
-        router.push('/login');
-        return;
+      if (profile) {
+        setUserName(profile.business_name);
       }
+
+      const today = new Date().toISOString().split('T')[0];
       
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError) {
-        console.error('Auth error:', authError);
-        // If we get an auth session missing error, redirect to login
-        if (authError.message.includes('Auth session missing')) {
-          router.push('/login');
-        }
-        setLoading(false);
-        return;
-      }
-      
-      if (user) {
-        const { data: profile } = await (supabase as any)
-          .from('users')
-          .select('business_name')
-          .eq('id', user.id)
-          .single();
-        
-        if (profile) {
-          setUserName(profile.business_name);
-        }
+      // Load today's jobs count
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { count: todaysJobsCount } = await (supabase as any)
+        .from('jobs')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('scheduled_date', today);
 
-        const today = new Date().toISOString().split('T')[0];
-        
-        const { count: todaysJobsCount } = await (supabase as any)
-          .from('jobs')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .eq('scheduled_date', today);
+      // Load today's job details
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: todaysJobsData } = await (supabase as any)
+        .from('jobs')
+        .select(`
+          id,
+          time_window,
+          type,
+          customer_id,
+          quick_customer,
+          customers (
+            name,
+            address
+          )
+        `)
+        .eq('user_id', user.id)
+        .eq('scheduled_date', today)
+        .order('time_window')
+        .limit(5);
 
-        const { data: todaysJobsData } = await (supabase as any)
-          .from('jobs')
-          .select(`
-            id,
-            time_window,
-            type,
-            customer_id,
-            quick_customer,
-            customers (
-              name,
-              address
-            )
-          `)
-          .eq('user_id', user.id)
-          .eq('scheduled_date', today)
-          .order('time_window')
-          .limit(5);
+      const formattedJobs = todaysJobsData?.map((job: any) => {
+        const quickCustomer = job.quick_customer as { name?: string; address?: string } | null;
+        return {
+          id: job.id,
+          customer_name: job.customers?.name || quickCustomer?.name || 'Unknown Customer',
+          time_window: job.time_window,
+          type: job.type,
+          address: job.customers?.address || quickCustomer?.address || 'No address',
+        };
+      }) || [];
 
-        const formattedJobs = todaysJobsData?.map((job: any) => {
-          const quickCustomer = job.quick_customer as { name?: string; address?: string } | null;
-          return {
-            id: job.id,
-            customer_name: job.customers?.name || quickCustomer?.name || 'Unknown Customer',
-            time_window: job.time_window,
-            type: job.type,
-            address: job.customers?.address || quickCustomer?.address || 'No address',
-          };
-        }) || [];
+      setUpcomingJobs(formattedJobs);
 
-        setUpcomingJobs(formattedJobs);
+      // Load customers count
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { count: customersCount } = await (supabase as any)
+        .from('customers')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('archived', false);
 
-        const { count: customersCount } = await (supabase as any)
-          .from('customers')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .eq('archived', false);
-
-        const { count: pendingEstimatesCount } = await (supabase as any)
+      // Load pending estimates count (only if estimates table exists)
+      let pendingEstimatesCount = 0;
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { count } = await (supabase as any)
           .from('estimates')
           .select(`
             id,
@@ -134,19 +154,21 @@ export default function DashboardPage() {
           `, { count: 'exact', head: true })
           .eq('jobs.user_id', user.id)
           .is('signed_at', null);
-
-        setStats({
-          todaysJobs: todaysJobsCount || 0,
-          weeklyRevenue: 0,
-          activeCustomers: customersCount || 0,
-          pendingEstimates: pendingEstimatesCount || 0,
-        });
-      } else {
-        console.log('No user found, redirecting to login');
-        router.push('/login');
+        pendingEstimatesCount = count || 0;
+      } catch (estimateError) {
+        // Estimates table might not exist yet, that's fine
+        console.log('Estimates not available yet:', estimateError);
       }
+
+      setStats({
+        todaysJobs: todaysJobsCount || 0,
+        weeklyRevenue: 0,
+        activeCustomers: customersCount || 0,
+        pendingEstimates: pendingEstimatesCount,
+      });
     } catch (error) {
       console.error('Error loading dashboard data:', error);
+      setError('Failed to load some dashboard data');
     } finally {
       setLoading(false);
     }
@@ -185,8 +207,16 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex items-center justify-center h-64">
         <div className="text-gray-500">Loading dashboard...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-red-500">Error: {error}</div>
       </div>
     );
   }
