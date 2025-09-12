@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { AppError, ErrorCodes, createApiResponse } from '@/lib/errors';
-import { Search, Plus, X, MapPin, Calendar, Clock } from 'lucide-react';
+import { AppError, ErrorCodes } from '@/lib/errors';
+import { Search, X, Calendar, Clock } from 'lucide-react';
 import AddressAutocomplete from '@/components/ui/address-autocomplete';
 import { type PlaceDetails } from '@/lib/google-maps';
 

@@ -19,20 +19,9 @@ export default function SessionProvider({ children }: { children: React.ReactNod
   const supabase = createClient();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   useEffect(() => {
     let mounted = true;
-    let isTabVisible = true;
-
-    // Track tab visibility to avoid unnecessary auth checks
-    const handleVisibilityChange = () => {
-      isTabVisible = !document.hidden;
-    };
-
-    if (typeof document !== 'undefined') {
-      document.addEventListener('visibilitychange', handleVisibilityChange);
-    }
 
     // Get initial session
     const getSession = async () => {
@@ -42,7 +31,6 @@ export default function SessionProvider({ children }: { children: React.ReactNod
         if (mounted) {
           setUser(user);
           setLoading(false);
-          setInitialLoadComplete(true);
         }
       } catch (error) {
         console.error('Error getting session:', error);
@@ -81,9 +69,6 @@ export default function SessionProvider({ children }: { children: React.ReactNod
     return () => {
       mounted = false;
       subscription.unsubscribe();
-      if (typeof document !== 'undefined') {
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
-      }
     };
   }, [router, supabase]);
 

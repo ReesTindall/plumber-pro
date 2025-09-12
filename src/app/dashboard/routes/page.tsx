@@ -8,8 +8,7 @@ import { optimizeRoute, type RouteStop, type OptimizedRoute } from '@/lib/route-
 import { 
   MapPin, 
   Navigation, 
-  Clock, 
-  Users,
+  Clock,
   ExternalLink,
   Loader2,
   Calendar,
@@ -326,7 +325,7 @@ export default function RoutesPage() {
                   <div className="text-center py-8">
                     <Navigation className="mx-auto h-12 w-12 text-gray-400" />
                     <p className="mt-2 text-sm text-gray-500">
-                      Click "Optimize Route" to calculate the best route for your jobs.
+                      Click &quot;Optimize Route&quot; to calculate the best route for your jobs.
                     </p>
                   </div>
                 ) : (
