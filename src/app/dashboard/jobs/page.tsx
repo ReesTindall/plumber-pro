@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { useSession } from '@/components/session-provider';
 import { 
   Calendar, 
   Clock, 
@@ -61,37 +62,22 @@ export default function JobsPage() {
   
   const router = useRouter();
   const supabase = createClient();
+  const { user: sessionUser, loading: sessionLoading } = useSession();
 
   useEffect(() => {
-    let mounted = true;
-    const loadData = async () => {
-      if (!mounted) return;
-      
-      try {
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        
-        if (!mounted) return;
-        
-        if (authError || !user) {
-          console.error('Jobs page auth error:', authError?.message || 'No user');
-          router.push('/login');
-          return;
-        }
-        
-        await loadJobs(user);
-      } catch (error) {
-        if (!mounted) return;
-        console.error('Error loading jobs:', error);
-        setLoading(false);
-      }
-    };
+    // Wait for session to load
+    if (sessionLoading) return;
     
-    loadData();
-    
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    // If no user after session loads, redirect to login
+    if (!sessionUser) {
+      router.push('/login');
+      return;
+    }
+
+    // User is authenticated, load jobs data
+    console.log('Loading jobs for user:', sessionUser.email);
+    loadJobs(sessionUser);
+  }, [sessionUser, sessionLoading, router]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     filterJobs();

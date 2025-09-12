@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { useSession } from '@/components/session-provider';
 import { 
   Calendar, 
   DollarSign, 
@@ -43,58 +44,22 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
+  const { user: sessionUser, loading: sessionLoading } = useSession();
 
   useEffect(() => {
-    let mounted = true;
-    let authTimeout: NodeJS.Timeout;
+    // Wait for session to load
+    if (sessionLoading) return;
     
-    const loadData = async () => {
-      if (!mounted) return;
-      
-      try {
-        // Set a timeout for auth check to avoid infinite loading
-        authTimeout = setTimeout(() => {
-          if (mounted) {
-            console.error('Auth check timed out, redirecting to login');
-            router.push('/login');
-          }
-        }, 10000); // 10 second timeout
-        
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        
-        clearTimeout(authTimeout);
-        
-        if (!mounted) return;
-        
-        if (authError || !user) {
-          console.error('Auth error:', authError?.message || 'No user found');
-          console.log('Redirecting to login...');
-          router.push('/login');
-          return;
-        }
+    // If no user after session loads, redirect to login
+    if (!sessionUser) {
+      router.push('/login');
+      return;
+    }
 
-        console.log('User authenticated:', user.email);
-        await loadDashboardData(user);
-      } catch (error) {
-        clearTimeout(authTimeout);
-        if (!mounted) return;
-        console.error('Error loading dashboard:', error);
-        setError('Failed to load dashboard data. Please try logging in again.');
-        setTimeout(() => {
-          router.push('/login');
-        }, 2000);
-      }
-    };
-    
-    loadData();
-    
-    return () => {
-      mounted = false;
-      if (authTimeout) {
-        clearTimeout(authTimeout);
-      }
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    // User is authenticated, load dashboard data
+    console.log('User authenticated via session:', sessionUser.email);
+    loadDashboardData(sessionUser);
+  }, [sessionUser, sessionLoading, router]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadDashboardData = async (user: any) => {
     try {
