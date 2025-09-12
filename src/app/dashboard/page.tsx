@@ -46,27 +46,43 @@ export default function DashboardPage() {
 
   useEffect(() => {
     let mounted = true;
+    let authTimeout: NodeJS.Timeout;
     
     const loadData = async () => {
       if (!mounted) return;
       
       try {
+        // Set a timeout for auth check to avoid infinite loading
+        authTimeout = setTimeout(() => {
+          if (mounted) {
+            console.error('Auth check timed out, redirecting to login');
+            router.push('/login');
+          }
+        }, 10000); // 10 second timeout
+        
         const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        clearTimeout(authTimeout);
         
         if (!mounted) return;
         
         if (authError || !user) {
-          console.error('Auth error:', authError?.message || 'No user');
+          console.error('Auth error:', authError?.message || 'No user found');
+          console.log('Redirecting to login...');
           router.push('/login');
           return;
         }
 
+        console.log('User authenticated:', user.email);
         await loadDashboardData(user);
       } catch (error) {
+        clearTimeout(authTimeout);
         if (!mounted) return;
         console.error('Error loading dashboard:', error);
-        setError('Failed to load dashboard data');
-        setLoading(false);
+        setError('Failed to load dashboard data. Please try logging in again.');
+        setTimeout(() => {
+          router.push('/login');
+        }, 2000);
       }
     };
     
@@ -74,6 +90,9 @@ export default function DashboardPage() {
     
     return () => {
       mounted = false;
+      if (authTimeout) {
+        clearTimeout(authTimeout);
+      }
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

@@ -63,22 +63,45 @@ export default function JobsPage() {
   const supabase = createClient();
 
   useEffect(() => {
-    loadJobs();
+    let mounted = true;
+    const loadData = async () => {
+      if (!mounted) return;
+      
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (!mounted) return;
+        
+        if (authError || !user) {
+          console.error('Jobs page auth error:', authError?.message || 'No user');
+          router.push('/login');
+          return;
+        }
+        
+        await loadJobs(user);
+      } catch (error) {
+        if (!mounted) return;
+        console.error('Error loading jobs:', error);
+        setLoading(false);
+      }
+    };
+    
+    loadData();
+    
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   useEffect(() => {
     filterJobs();
   }, [jobs, searchTerm, statusFilter, dateFilter]);
 
-  const loadJobs = async () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const loadJobs = async (user: any) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push('/login');
-        return;
-      }
-
-      const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
         .from('jobs')
         .select(`
           id,
