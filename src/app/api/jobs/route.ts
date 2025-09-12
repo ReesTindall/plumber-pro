@@ -4,7 +4,7 @@ import { handleSupabaseError, createApiResponse, AppError, ErrorCodes } from '@/
 
 export async function GET(request: Request) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
@@ -22,7 +22,8 @@ export async function GET(request: Request) {
     const date = url.searchParams.get('date');
     const limit = parseInt(url.searchParams.get('limit') || '100');
 
-    let query = supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query = (supabase as any)
       .from('jobs')
       .select(`
         id,
@@ -78,7 +79,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
@@ -134,7 +135,8 @@ export async function POST(request: Request) {
       status: 'scheduled'
     };
 
-    const { data, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
       .from('jobs')
       .insert([jobData])
       .select(`

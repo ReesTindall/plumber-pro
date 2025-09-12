@@ -189,7 +189,8 @@ export default function NewJobPage() {
 
       // If saving customer and not using existing customer
       if (formData.saveCustomer && !formData.customerId && formData.customerName) {
-        const { data: customerData, error: customerError } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: customerData, error: customerError } = await (supabase as any)
           .from('customers')
           .insert([{
             user_id: user.id,
@@ -211,7 +212,8 @@ export default function NewJobPage() {
       }
 
       // Create the job
-      const { data, error: jobError } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error: jobError } = await (supabase as any)
         .from('jobs')
         .insert([jobData])
         .select()
