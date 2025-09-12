@@ -26,6 +26,11 @@ export default function SessionProvider({ children }: { children: React.ReactNod
     // Get initial session
     const getSession = async () => {
       try {
+        // Add a small delay to prevent race conditions during navigation
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
+        if (!mounted) return;
+        
         const { data: { user }, error } = await supabase.auth.getUser();
         
         if (mounted) {
@@ -40,6 +45,39 @@ export default function SessionProvider({ children }: { children: React.ReactNod
         }
       }
     };
+
+    // Add timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (mounted && loading) {
+        console.log('Session check timeout, assuming no user');
+        setUser(null);
+        setLoading(false);
+      }
+    }, 5000); // 5 second timeout
+
+    // Handle page visibility changes
+    const handleVisibilityChange = () => {
+      if (!document.hidden && mounted && loading) {
+        // Only re-check session if we're still loading and page becomes visible
+        getSession();
+      }
+    };
+
+    // Handle browser back/forward navigation
+    const handlePopState = () => {
+      if (mounted && loading) {
+        // Re-check session on navigation
+        getSession();
+      }
+    };
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+    }
+    
+    if (typeof window !== 'undefined') {
+      window.addEventListener('popstate', handlePopState);
+    }
 
     getSession();
 
@@ -68,7 +106,14 @@ export default function SessionProvider({ children }: { children: React.ReactNod
 
     return () => {
       mounted = false;
+      clearTimeout(timeoutId);
       subscription.unsubscribe();
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      }
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('popstate', handlePopState);
+      }
     };
   }, [router, supabase]);
 
