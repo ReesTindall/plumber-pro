@@ -1,9 +1,21 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { handleSupabaseError, createApiResponse, AppError, ErrorCodes } from '@/lib/errors';
 
 export async function POST(request: Request) {
   try {
     const { userId, email, businessName, phone } = await request.json();
+
+    // Validate required fields
+    if (!userId || !email || !businessName) {
+      const error = new AppError(
+        ErrorCodes.BIZ_INVALID_JOB_STATUS,
+        'Missing required fields: userId, email, and businessName are required',
+        400
+      );
+      const response = createApiResponse(null, error);
+      return NextResponse.json(response, { status: error.statusCode });
+    }
 
     // Create admin client with service role
     const supabaseAdmin = createClient(
@@ -34,18 +46,22 @@ export async function POST(request: Request) {
 
     if (error) {
       console.error('Profile creation error:', error);
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 }
-      );
+      const appError = handleSupabaseError(error);
+      const response = createApiResponse(null, appError);
+      return NextResponse.json(response, { status: appError.statusCode });
     }
 
-    return NextResponse.json({ data });
+    const response = createApiResponse(data);
+    return NextResponse.json(response);
   } catch (error) {
     console.error('Registration API error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+    const appError = new AppError(
+      'INTERNAL_ERROR',
+      'Internal server error',
+      500,
+      error
     );
+    const response = createApiResponse(null, appError);
+    return NextResponse.json(response, { status: appError.statusCode });
   }
 }

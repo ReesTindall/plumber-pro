@@ -4,12 +4,12 @@
 Building MVP CRM for 1-3 person plumbing companies. Focus on route optimization, professional invoicing, and easy job creation. Users are NOT tech-savvy.
 
 ## Current Development State
-- Phase: Project Setup
-- Sprint: Week 1 of 6
+- Phase: Core Features Development
+- Sprint: Week 3-4 of 6
 - Environment: Development
 
 ## Tech Stack
-- Next.js 14 (App Router) + TypeScript
+- Next.js 15.5.2 (App Router) + TypeScript
 - Supabase (Database + Auth)  
 - Tailwind CSS + shadcn/ui
 - Stripe + Square for payments
@@ -23,21 +23,40 @@ Building MVP CRM for 1-3 person plumbing companies. Focus on route optimization,
 5. **Auto-save everything** - No lost data ever
 
 ## Key Features Priority
-1. Smart job creation (customer + job in one form)
+1. ✅ Smart job creation (customer + job in one form)
 2. Route optimization (save drive time)
 3. Professional invoices (build trust)
 4. Payment processing (get paid same day)
 5. SMS automation (stay professional)
 
-## Current Focus
-- [x] Setting up project structure
-- [ ] Implementing Supabase auth
-- [ ] Creating database schema
+## Current Focus - Week 3-4 Features
+- [x] Combined customer+job creation form with search/autocomplete
+- [x] Job management CRUD operations
+- [x] Customer search and management
+- [x] Mobile responsive layout
+- [x] Environment detection and banners
+- [x] Standardized error handling
+- [ ] Google Maps integration for route optimization
+- [ ] Preview environment testing
 
 ## Files Being Worked On
-- /app/layout.tsx
-- /app/page.tsx
-- /lib/supabase.ts
+- /src/app/dashboard/jobs/new/page.tsx - Combined customer+job creation form
+- /src/app/dashboard/jobs/page.tsx - Job listing and management
+- /src/app/api/jobs/route.ts - Jobs API endpoints
+- /src/app/api/customers/route.ts - Customers API endpoints
+- /lib/errors.ts - Standardized error handling
+- /lib/config.ts - Environment configuration
+- /components/environment-banner.tsx - Test mode indicator
+
+## Recently Completed
+- ✅ Standardized error handling system with AppError class
+- ✅ Environment configuration with feature flags
+- ✅ Combined customer+job creation form with auto-save
+- ✅ Customer search/autocomplete functionality
+- ✅ Job management CRUD operations
+- ✅ API routes for customers and jobs with proper error handling
+- ✅ Environment banner component for test mode indication
+- ✅ Mobile-responsive dashboard layout
 
 ## Remember
 - Users are plumbers with dirty hands
