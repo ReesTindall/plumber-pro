@@ -204,10 +204,12 @@ export default function JobsPage() {
   const groupOrder = ['Today', 'Tomorrow', 'Upcoming', 'Past'];
   const orderedGroups = groupOrder.filter(group => groupedJobs[group]?.length > 0);
 
-  if (loading) {
+  if (loading || sessionLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading jobs...</div>
+        <div className="text-gray-500">
+          {sessionLoading ? 'Checking authentication...' : 'Loading jobs...'}
+        </div>
       </div>
     );
   }

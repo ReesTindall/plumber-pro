@@ -23,16 +23,60 @@ export default function SessionProvider({ children }: { children: React.ReactNod
   useEffect(() => {
     let mounted = true;
 
-    // Get initial session
+    // Get initial session and validate it
     const getSession = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user }, error } = await supabase.auth.getUser();
+        
+        if (error) {
+          console.log('Session error:', error.message);
+          // Clear invalid session
+          await supabase.auth.signOut();
+          if (mounted) {
+            setUser(null);
+            setLoading(false);
+          }
+          return;
+        }
+
+        if (user) {
+          // Validate the session by making a simple API call
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { error: profileError } = await (supabase as any)
+              .from('users')
+              .select('id')
+              .eq('id', user.id)
+              .limit(1);
+            
+            if (profileError && profileError.message.includes('JWT')) {
+              console.log('Session validation failed, clearing session');
+              await supabase.auth.signOut();
+              if (mounted) {
+                setUser(null);
+                setLoading(false);
+              }
+              return;
+            }
+          } catch (validationError) {
+            console.log('Session validation error:', validationError);
+            await supabase.auth.signOut();
+            if (mounted) {
+              setUser(null);
+              setLoading(false);
+            }
+            return;
+          }
+        }
+
         if (mounted) {
           setUser(user);
           setLoading(false);
         }
       } catch (error) {
         console.error('Error getting session:', error);
+        // Clear potentially corrupt session
+        await supabase.auth.signOut();
         if (mounted) {
           setUser(null);
           setLoading(false);

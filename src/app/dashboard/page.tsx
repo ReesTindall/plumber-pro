@@ -189,10 +189,12 @@ export default function DashboardPage() {
     },
   ];
 
-  if (loading) {
+  if (loading || sessionLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading dashboard...</div>
+        <div className="text-gray-500">
+          {sessionLoading ? 'Checking authentication...' : 'Loading dashboard...'}
+        </div>
       </div>
     );
   }
